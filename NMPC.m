@@ -164,7 +164,7 @@ args.lbx(4:n_controls:n_controls*N,1) = 0;               args.ubx(4:n_controls:n
 
 t0 = 0;
 x0 = [0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];  % quadrotor's initial state
-xs = [5; 0; 10];                            % reference state
+xs = [0; 0; 10];                            % reference state
 xx(:,1) = x0;                               % storing location of 
 % the quadrotor traveled
 t(1) = t0;
