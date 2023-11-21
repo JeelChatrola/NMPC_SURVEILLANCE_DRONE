@@ -12,7 +12,7 @@ import casadi.*
 %% Quadrotor Dynamics
 
 T = 0.2; % time stamp
-N = 15;  % prediction horizon
+N = 20;  % prediction horizon
 
 % constraints on controls and states
 
@@ -84,10 +84,10 @@ rhs_u = [v1; v2; v3;
     T_inv*[omega_1; omega_2; omega_3]; 
     [0; 0; -g] + (1/m)* Rot_CE * ([0; 0; u1 + u2 + u3 + u4] +  r );
     % last 3 variables
-    I\([(u2 - u4)*l; (u3 - u1)*l ; ...
-    (u1 - u2 + u3 - u4)*sigma] + n - cross([omega_1; omega_2; omega_3], I * [omega_1; omega_2; omega_3]))];
+    Rot_CE*(I\([(u2 - u4)*l; (u3 - u1)*l;
+    (u1 - u2 + u3 - u4)*sigma] + n - cross([omega_1; omega_2; omega_3], I * [omega_1; omega_2; omega_3])))];
 
-% disp(rhs_u)
+disp(rhs_u)
 
 f_u = Function('f_u', {states_q, controls_q}, {rhs_u});                    % Nonlinear Mapping Function f(x,u)
 U = SX.sym('U', n_controls, N);                                            % Desition Variables 
@@ -119,7 +119,9 @@ g = [];  % constrains of pitch angle theta
 % this loop will run for prediction horizon times, in this case it's 15
 for k=1:N
     stt = X(:, k);
-    obj = obj + sqrt((stt(1) - 5)^2) + sqrt((stt(2) - 5)^2);
+    % obj = obj + ((stt(1) - P(13))^2) + ((stt(2) - P(14))^2) + ((stt(3) - P(15))^2); % squared distance
+    % obj = obj + sqrt((stt(1) - P(13))^2) + sqrt((stt(2) - P(14))^2) + sqrt((stt(3) - P(15))^2); % sqrt distance
+    obj = obj + sqrt((stt(1) - P(13))^2 + (stt(2) - P(14))^2 + (stt(3) - P(15))^2); % 3D distance, better than upper 
 end
 
 % compute the state constrains
@@ -148,9 +150,9 @@ args = struct;
 
 % constraints on states (inequality constraints)
 % args.lbg = -10;  args.ubg = 10; 
-args.lbg(1:3:48) = -5;          args.ubg(1:3:48) = 5;       % bounds on state_x 
-args.lbg(2:3:48) = -5;          args.ubg(2:3:48) = 5;       % bounds on state_y
-args.lbg(3:3:48) = 0;           args.ubg(3:3:48) = 10;      % bounds on state_z
+args.lbg(1:3:3*(N+1)) = -5;          args.ubg(1:3:3*(N+1)) = 5;       % bounds on state_x 
+args.lbg(2:3:3*(N+1)) = -5;          args.ubg(2:3:3*(N+1)) = 5;       % bounds on state_y
+args.lbg(3:3:3*(N+1)) = 0;           args.ubg(3:3:3*(N+1)) = 10;      % bounds on state_z
 
 % constraints on controls (equality constraints)
 args.lbx(1:n_controls:n_controls*N,1) = 0;               args.ubx(1:n_controls:n_controls*N,1) = u_max;  
@@ -162,7 +164,7 @@ args.lbx(4:n_controls:n_controls*N,1) = 0;               args.ubx(4:n_controls:n
 
 t0 = 0;
 x0 = [0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];  % quadrotor's initial state
-xs = [5; 5; 10];                            % reference state
+xs = [5; 0; 10];                            % reference state
 xx(:,1) = x0;                               % storing location of 
 % the quadrotor traveled
 t(1) = t0;
@@ -180,6 +182,7 @@ loop_run = 100;
 u_cl = zeros(n_controls, loop_run);
 
 main_loop = tic;
+% while (sqrt((xs(1)-x0(1))^2 + (xs(1)-x0(1))^2 + (xs(1)-x0(1))^2) > 0.000000001)
 for i=1:loop_run
     args.p = [x0; xs];
     args.x0 = reshape(u0',n_controls*N,1); % initial value of the optimization variables
@@ -203,6 +206,7 @@ for i=1:loop_run
 end
 main_loop_time = toc(main_loop)
 
+% loop_run = mpciter
 %% Plotting Stuff
 
 % just for  plotting 
@@ -211,9 +215,9 @@ ss1(1,1:loop_run) = 0;
 
 figure
 plot3(xx(1,1:loop_run), xx(2,1:loop_run), xx(3,1:loop_run),'b-');
-% xlim([-10 10]);
-% ylim([-10 10]);
-% zlim([0 10]);
+xlim([-10 10]);
+ylim([-10 10]);
+zlim([0 10]);
 xlabel('X[m]'); ylabel('Y[m]'); zlabel('Z[m]');
 legend('Quadrotor');
 grid on;
