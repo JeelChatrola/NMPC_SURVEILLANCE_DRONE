@@ -12,5 +12,5 @@ This project is taken under a course requirement for RBE 502: Robot Control at W
       
        
 
-## Caught Scene
+## Caught Scene (will be updated soon)
 <img align="midle" height="400" width="700" src="https://github.com/devsonni/NMPC_SURVEILLANCE_DRONE/blob/main/Results/test_escape.gif">  
